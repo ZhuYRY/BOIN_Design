@@ -1,0 +1,39 @@
+---
+title: "BOIN Design Simulation Set-up"
+author: "Yanruyu Zhu (yaz4004)"
+date: "10/26/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Objective      
+Replication of Bayesian Optimal Interval Design: A Simple and Well-Performing Design for Phase I Oncology Trials by Yuan et al.
+
+## Simulation setting         
+- 5 Dose levels;  
+- Max sample size: 30 patients;     
+- Dose Limiting Toxicity (DLT) rate: 15%, 20%, 25%, 30%;    
+- For each DLT, 16 toxicity scenarios (location of MTD and gaps around MTD);        
+- Under each scenario (see ToxicityScenarios_DLTrates.xlsx), do 10,000 trails.
+
+### - Traditional 3+3         
+- Dose level 1: $A\ B\ C$ (Cohort 1)       
+  - 0 DLT (0 out of 3): $D\ E\ F$ at Dose level 2;       
+  - 1 DLT (1 out of 3): $D\ E\ F$ at Dose level 1;         
+    - 0 DLT (1 out of 6):  $G\ H\ I$ at Dose level 2.        
+- IF >1 DLT out of 3 or 6 THEN Current dose level ($Dose_{i}$) > MTD:       
+  - IF less than 6 patients have already been at $Dose_{i-1}$, THEN add a cohort of 3 at $Dose_{i-1}$;      
+  - IF 6 patients have already been at $Dose_{i-1}$, THEN $Dose_{i-1}=MTD$;      
+  - IF $Dose_{i-1} = Dose_1$, THEN the trial is terminated and the MTD is not found.     
+- Remaining patients are considered treated at the selected MTD.
+
+### Local BOIN      
+Boundaries
+
+### Global BOIN     
+Boundaries
+## Package
+### BOIN
