@@ -2,7 +2,7 @@
 title: "BOIN Design Simulation Set-up"
 author: "Yanruyu Zhu (yaz4004)"
 date: "10/26/2021"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
