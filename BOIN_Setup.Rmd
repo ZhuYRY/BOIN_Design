@@ -30,10 +30,26 @@ Replication of Bayesian Optimal Interval Design: A Simple and Well-Performing De
   - IF $Dose_{i-1} = Dose_1$, THEN the trial is terminated and the MTD is not found.     
 - Remaining patients are considered treated at the selected MTD.
 
-### Local BOIN      
+### - Local BOIN      
 Boundaries
 
-### Global BOIN     
+### - Global BOIN     
 Boundaries
+
 ## Package
+
 ### BOIN
+
+### STAN
+
+## Performance metrics       
+### - Percentage of correct selection (PCS) of the MTD            
+Percentage of correct selection (PCS) of the true MTD in 10000 simulation trials.      
+
+### - Average number of patients allocated to the MTD        
+
+### - Risk of overdosing       
+
+### - Risk of underdosing      
+
+

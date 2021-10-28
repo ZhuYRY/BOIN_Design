@@ -1,0 +1,32 @@
+---
+title: "Simulation"
+author: "Yanruyu Zhu (yaz4004)"
+date: "10/28/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# First try-out         
+- 10/28/2021      
+- DLT = 0.2; Scenario 10; local BOIN; Sim=10,000;             
+
+```{r}
+# make sure all the data diles and Rmd files are in the same folder
+path = getwd()
+setwd(path)
+
+library(readxl)
+library(writexl)
+library(BOIN)
+
+DLT_20 = as.data.frame.list(read_excel("ToxicityScenarios_DLTrates.xlsx", sheet = "DLT=0.2"))
+```
+
+```{r}
+#DLT_20
+DLT_20[DLT_20$Scenario==10,]
+```
+
