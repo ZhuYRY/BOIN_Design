@@ -14,7 +14,8 @@ Replication of Bayesian Optimal Interval Design: A Simple and Well-Performing De
 
 ## Simulation setting         
 - 5 Dose levels;  
-- Max sample size: 30 patients;     
+- Max sample size: 30 patients;      
+- Number of Cohorts: 10;           
 - Dose Limiting Toxicity (DLT) rate: 15%, 20%, 25%, 30%;    
 - For each DLT, 16 toxicity scenarios (location of MTD and gaps around MTD);        
 - Under each scenario (see ToxicityScenarios_DLTrates.xlsx), do 10,000 trails.
@@ -35,6 +36,10 @@ Boundaries
 
 ### - Global BOIN     
 Boundaries
+
+## Data generation           
+how are the trial data (not the dose scenario) in each simulation generated?     
+
 
 ## Package
 
