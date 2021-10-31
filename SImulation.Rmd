@@ -19,9 +19,12 @@ knitr::opts_chunk$set(echo = TRUE)
 path = getwd()
 setwd(path)
 
-library(readxl)
-library(writexl)
-library(BOIN)
+for (package in c('readxl', 'BOIN', 'escalation')) {
+    if (!require(package, character.only=T, quietly=T)) {
+        install.packages(package)
+        library(package, character.only=T)
+    }
+}
 
 DLT_20 = as.data.frame.list(read_excel("ToxicityScenarios_DLTrates.xlsx", sheet = "DLT=0.2"))
 ```
@@ -30,14 +33,25 @@ DLT_20 = as.data.frame.list(read_excel("ToxicityScenarios_DLTrates.xlsx", sheet 
 DLT_20
 S10 = DLT_20[DLT_20$Scenario==10,][2:6]
 DLT_true = 0.2
-S10 = as.list(S10)
+S10 = as.double(as.list(S10))
+
 ```
+
+### - Local BOIN           
+
+```{r}
+### Try "Local BOIN" on Scenario 10 
+result = get.oc(target = DLT_true, p.true = S10,
+                ncohort=10, cohortsize=3, startdose=1, ntrial=10000)
+result
+```
+
 
 ```{r}
 PCS_lis = rep(0,16)
 for (i in 1:nrow(DLT_20)) {
   S = as.list(DLT_20[DLT_20$Scenario==i,][2:6])
-  result = get.oc(target = DLT_true, p.true = S,
+  result = get.oc(target = DLT_true, p.true = as.double(S),
                 ncohort=10, cohortsize=3, startdose=1, ntrial=10000)
   idx = which(S == DLT_true)[1]
   PCS_lis[i] = result$selpercent[idx]
@@ -47,10 +61,60 @@ for (i in 1:nrow(DLT_20)) {
 #                ncohort=10, cohortsize=3, startdose=1, ntrial=1000)
 ```
 
+
 ```{r}
 plot(x = (1:16), y = PCS_lis, type="o", pch="o", lty=1, ylim=c(0,70),
      xlab="Scenario",
-     ylab="Correct Selection")
+     ylab="Correct Selection",
+     main="Local BOIN PCS when DLT=0.2")
+```
+
+### - 3+3      
+```{r}
+### Try "3+3" on Scenario 10 
+sims <- get_three_plus_three(num_doses = 5, allow_deescalate = FALSE) %>%
+  simulate_trials(num_sims = 1000, true_prob_tox = as.double(S10))
+sims
+```
+
+
+```{r}
+# Plot on DLT=0.2
+PCS_lis_3plus3 = rep(0,16)
+for (i in 1:nrow(DLT_20)) {
+  S = as.list(DLT_20[DLT_20$Scenario==i,][2:6])
+  #result = get.oc(target = DLT_true, p.true = S,
+  #              ncohort=10, cohortsize=3, startdose=1, ntrial=10000)
+  sims <- get_three_plus_three(num_doses = 5, allow_deescalate = FALSE) %>%
+  simulate_trials(num_sims = 10000, true_prob_tox = as.double(S))
+  idx = which(S == DLT_true)[1]
+  PCS_lis_3plus3[i] = prob_recommend(sims)[idx+1]
+  #PCS_lis[i] = result$selpercent[idx]
+}
+
+```
+
+```{r}
+plot(x = (1:16), y = PCS_lis_3plus3*100, type="o", pch="*", lty=1, ylim=c(0,70),
+     xlab="Scenario",
+     ylab="Correct Selection",
+     main="3+3 PCS when DLT=0.2")
+```
+
+### - Compare 3+3 vs Local BOIN on PCS       
+#### DLT = 20%        
+```{r}
+plot(x = (1:16), y = PCS_lis, type="o", pch="o", lty=1, col="black",
+     xlim = c(1,16), ylim=c(0,100), axes=FALSE,
+     xlab="Scenario",
+     ylab="Correct Selection (%)",
+     main="Target DLT rate = 20%")
+
+axis(side = 1, at = seq(1, 16, by=1), las=2)
+axis(side = 2, at = seq(0, 100, by=10))
+lines(x = (1:16), PCS_lis_3plus3*100, pch=18, col="blue", type="b", lty=2)
+legend(x = "topleft", legend=c("Local BOIN", "3+3"),
+       col=c("black", "blue"), lty=1:2, lwd=2)
 ```
 
 
