@@ -26,7 +26,10 @@ for (package in c('readxl', 'BOIN', 'escalation')) {
     }
 }
 
+DLT_15 = as.data.frame.list(read_excel("ToxicityScenarios_DLTrates.xlsx", sheet = "DLT=0.15"))
 DLT_20 = as.data.frame.list(read_excel("ToxicityScenarios_DLTrates.xlsx", sheet = "DLT=0.2"))
+DLT_25 = as.data.frame.list(read_excel("ToxicityScenarios_DLTrates.xlsx", sheet = "DLT=0.25"))
+DLT_30 = as.data.frame.list(read_excel("ToxicityScenarios_DLTrates.xlsx", sheet = "DLT=0.3"))
 ```
 
 ```{r}
@@ -101,7 +104,34 @@ plot(x = (1:16), y = PCS_lis_3plus3*100, type="o", pch="*", lty=1, ylim=c(0,70),
      main="3+3 PCS when DLT=0.2")
 ```
 
-### - Compare 3+3 vs Local BOIN on PCS       
+## Performance metrics      
+### - i. Compare 3+3 vs Local BOIN on PCS      
+
+#### DLT = 15%        
+```{r}
+PCS_lis_15 = rep(0,16)
+for (i in 1:nrow(DLT_20)) {
+  S = as.list(DLT_20[DLT_20$Scenario==i,][2:6])
+  result = get.oc(target = DLT_true, p.true = as.double(S),
+                ncohort=10, cohortsize=3, startdose=1, ntrial=10000)
+  idx = which(S == DLT_true)[1]
+  PCS_lis[i] = result$selpercent[idx]
+}
+
+plot(x = (1:16), y = PCS_lis, type="o", pch="o", lty=1, col="black",
+     xlim = c(1,16), ylim=c(0,100), axes=FALSE,
+     xlab="Scenario",
+     ylab="Correct Selection (%)",
+     main="Target DLT rate = 20%")
+
+axis(side = 1, at = seq(1, 16, by=1), las=2)
+axis(side = 2, at = seq(0, 100, by=10))
+lines(x = (1:16), PCS_lis_3plus3*100, pch=18, col="blue", type="b", lty=2)
+legend(x = "topleft", legend=c("Local BOIN", "3+3"),
+       col=c("black", "blue"), lty=1:2, lwd=2)
+```
+
+
 #### DLT = 20%        
 ```{r}
 plot(x = (1:16), y = PCS_lis, type="o", pch="o", lty=1, col="black",
@@ -115,6 +145,19 @@ axis(side = 2, at = seq(0, 100, by=10))
 lines(x = (1:16), PCS_lis_3plus3*100, pch=18, col="blue", type="b", lty=2)
 legend(x = "topleft", legend=c("Local BOIN", "3+3"),
        col=c("black", "blue"), lty=1:2, lwd=2)
+```
+
+### - ii. The average number of patients allocated to the MTD       
+#### DLT = 20%
+```{r}
+PCS_lis
+for (i in 1:nrow(DLT_20)) {
+  S = as.list(DLT_20[DLT_20$Scenario==i,][2:6])
+  result = get.oc(target = DLT_true, p.true = as.double(S),
+                ncohort=10, cohortsize=3, startdose=1, ntrial=10000)
+  idx = which(S == DLT_true)[1]
+  PCS_lis[i] = result$selpercent[idx]
+}
 ```
 
 
