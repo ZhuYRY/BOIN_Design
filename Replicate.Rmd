@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = FALSE)
 # make sure all the data diles and Rmd files are in the same folder
 path = getwd()
 setwd(path)
-
+set.seed(2021)
 for (package in c('readxl', 'BOIN', 'escalation')) {
     if (!require(package, character.only=T, quietly=T)) {
         install.packages(package)
@@ -29,6 +29,7 @@ DLT_30 = as.data.frame.list(read_excel("ToxicityScenarios_DLTrates.xlsx", sheet 
 
 
 ```{r}
+ntrial = 100
 # i. PCS
 PCS_lBOIN = rep(0,16)
 PCS_3p3 = rep(0,16)
@@ -55,14 +56,14 @@ for (i in 1:nrow(DLT_15)) {
   idx = which(S == DLT_true)[1]
   ### local BOIN
   result_lBOIN = get.oc(target = DLT_true, p.true = as.double(S),
-                ncohort=10, cohortsize=3, startdose=1, ntrial=10000)
+                ncohort=10, cohortsize=3, startdose=1, ntrial=ntrial)
   PCS_lBOIN[i] = result_lBOIN$selpercent[idx]
   AvgMTD_lBOIN[i] = result_lBOIN$npatients[idx]
   od60_lBOIN[i] = result_lBOIN$overdose60
   od80_lBOIN[i] = result_lBOIN$overdose80
   ### 3+3
   sims <- get_three_plus_three(num_doses = 5, allow_deescalate = FALSE) %>%
-  simulate_trials(num_sims = 10000, true_prob_tox = as.double(S))
+  simulate_trials(num_sims = ntrial, true_prob_tox = as.double(S))
   PCS_3p3[i] = prob_recommend(sims)[idx+1]
   vec = n_at_dose(sims)[idx]
   AvgMTD_3p3[i] = mean(vec[[1]])
@@ -84,7 +85,7 @@ axis(side = 1, at = seq(1, 16, by=1), las=2)
 axis(side = 2, at = seq(0, 100, by=10))
 lines(x = (1:16), PCS_3p3*100, pch=18, col="blue", type="b", lty=2)
 legend(x = "topleft", legend=c("Local BOIN", "3+3"),
-       col=c("black", "blue"), lty=1:2, lwd=2)
+       col=c("black", "blue"), lty=1:2, lwd=2, cex=0.75)
 ```
 
 ### ii. Avg # of patients at MTD             
@@ -98,9 +99,9 @@ plot(x = (1:16), y = AvgMTD_lBOIN, type="o", pch="o", lty=1, col="black",
 
 axis(side = 1, at = seq(1, 16, by=1), las=2)
 axis(side = 2, at = seq(0, 20, by=5))
-lines(x = (1:16), AvgMTD_3p3*100, pch=18, col="blue", type="b", lty=2)
-legend(x = "topleft", legend=c("Local BOIN", "3+3"),
-       col=c("black", "blue"), lty=1:2, lwd=2)
+lines(x = (1:16), AvgMTD_3p3, pch=18, col="blue", type="b", lty=2)
+legend(x = "topright", legend=c("Local BOIN", "3+3"),
+       col=c("black", "blue"), lty=1:2, lwd=2, cex=0.75)
 ```
 
 ## DLT = 20%
@@ -111,14 +112,14 @@ for (i in 1:nrow(DLT_20)) {
   idx = which(S == DLT_true)[1]
   ### local BOIN
   result_lBOIN = get.oc(target = DLT_true, p.true = as.double(S),
-                ncohort=10, cohortsize=3, startdose=1, ntrial=10000)
+                ncohort=10, cohortsize=3, startdose=1, ntrial=ntrial)
   PCS_lBOIN[i] = result_lBOIN$selpercent[idx]
   AvgMTD_lBOIN[i] = result_lBOIN$npatients[idx]
   od60_lBOIN[i] = result_lBOIN$overdose60
   od80_lBOIN[i] = result_lBOIN$overdose80
   ### 3+3
   sims <- get_three_plus_three(num_doses = 5, allow_deescalate = FALSE) %>%
-  simulate_trials(num_sims = 10000, true_prob_tox = as.double(S))
+  simulate_trials(num_sims = ntrial, true_prob_tox = as.double(S))
   PCS_3p3[i] = prob_recommend(sims)[idx+1]
   vec = n_at_dose(sims)[idx]
   AvgMTD_3p3[i] = mean(vec[[1]])
@@ -135,13 +136,13 @@ plot(x = (1:16), y = PCS_lBOIN, type="o", pch="o", lty=1, col="black",
      xlim = c(1,16), ylim=c(0,100), axes=FALSE,
      xlab="Scenario",
      ylab="Correct Selection (%)",
-     main="Target DLT rate = 15%")
+     main="Target DLT rate = 20%")
 
 axis(side = 1, at = seq(1, 16, by=1), las=2)
 axis(side = 2, at = seq(0, 100, by=10))
 lines(x = (1:16), PCS_3p3*100, pch=18, col="blue", type="b", lty=2)
 legend(x = "topleft", legend=c("Local BOIN", "3+3"),
-       col=c("black", "blue"), lty=1:2, lwd=2)
+       col=c("black", "blue"), lty=1:2, lwd=2, cex=0.75)
 ```
 
 ### ii. Avg # of patients at MTD             
@@ -151,13 +152,13 @@ plot(x = (1:16), y = AvgMTD_lBOIN, type="o", pch="o", lty=1, col="black",
      xlim = c(1,16), ylim=c(0,20), axes=FALSE,
      xlab="Scenario",
      ylab="Average no. of patients at MTD",
-     main="Target DLT rate = 15%")
+     main="Target DLT rate = 20%")
 
 axis(side = 1, at = seq(1, 16, by=1), las=2)
 axis(side = 2, at = seq(0, 20, by=5))
-lines(x = (1:16), AvgMTD_3p3*100, pch=18, col="blue", type="b", lty=2)
-legend(x = "topleft", legend=c("Local BOIN", "3+3"),
-       col=c("black", "blue"), lty=1:2, lwd=2)
+lines(x = (1:16), AvgMTD_3p3, pch=18, col="blue", type="b", lty=2)
+legend(x = "topright", legend=c("Local BOIN", "3+3"),
+       col=c("black", "blue"), lty=1:2, lwd=2, cex=0.75)
 ```
 
 ## DLT = 25%
@@ -169,14 +170,14 @@ for (i in 1:nrow(DLT_25)) {
   idx = which(S == DLT_true)[1]
   ### local BOIN
   result_lBOIN = get.oc(target = DLT_true, p.true = as.double(S),
-                ncohort=10, cohortsize=3, startdose=1, ntrial=10000)
+                ncohort=10, cohortsize=3, startdose=1, ntrial=ntrial)
   PCS_lBOIN[i] = result_lBOIN$selpercent[idx]
   AvgMTD_lBOIN[i] = result_lBOIN$npatients[idx]
   od60_lBOIN[i] = result_lBOIN$overdose60
   od80_lBOIN[i] = result_lBOIN$overdose80
   ### 3+3
   sims <- get_three_plus_three(num_doses = 5, allow_deescalate = FALSE) %>%
-  simulate_trials(num_sims = 10000, true_prob_tox = as.double(S))
+  simulate_trials(num_sims = ntrial, true_prob_tox = as.double(S))
   PCS_3p3[i] = prob_recommend(sims)[idx+1]
   vec = n_at_dose(sims)[idx]
   AvgMTD_3p3[i] = mean(vec[[1]])
@@ -194,13 +195,13 @@ plot(x = (1:16), y = PCS_lBOIN, type="o", pch="o", lty=1, col="black",
      xlim = c(1,16), ylim=c(0,100), axes=FALSE,
      xlab="Scenario",
      ylab="Correct Selection (%)",
-     main="Target DLT rate = 15%")
+     main="Target DLT rate = 25%")
 
 axis(side = 1, at = seq(1, 16, by=1), las=2)
 axis(side = 2, at = seq(0, 100, by=10))
 lines(x = (1:16), PCS_3p3*100, pch=18, col="blue", type="b", lty=2)
 legend(x = "topleft", legend=c("Local BOIN", "3+3"),
-       col=c("black", "blue"), lty=1:2, lwd=2)
+       col=c("black", "blue"), lty=1:2, lwd=2, cex=0.75)
 ```
 
 ### ii. Avg # of patients at MTD             
@@ -210,13 +211,13 @@ plot(x = (1:16), y = AvgMTD_lBOIN, type="o", pch="o", lty=1, col="black",
      xlim = c(1,16), ylim=c(0,20), axes=FALSE,
      xlab="Scenario",
      ylab="Average no. of patients at MTD",
-     main="Target DLT rate = 15%")
+     main="Target DLT rate = 25%")
 
 axis(side = 1, at = seq(1, 16, by=1), las=2)
 axis(side = 2, at = seq(0, 20, by=5))
-lines(x = (1:16), AvgMTD_3p3*100, pch=18, col="blue", type="b", lty=2)
-legend(x = "topleft", legend=c("Local BOIN", "3+3"),
-       col=c("black", "blue"), lty=1:2, lwd=2)
+lines(x = (1:16), AvgMTD_3p3, pch=18, col="blue", type="b", lty=2)
+legend(x = "topright", legend=c("Local BOIN", "3+3"),
+       col=c("black", "blue"), lty=1:2, lwd=2, cex=0.75)
 ```
 
 ## DLT = 30%
@@ -228,14 +229,14 @@ for (i in 1:nrow(DLT_30)) {
   idx = which(S == DLT_true)[1]
   ### local BOIN
   result_lBOIN = get.oc(target = DLT_true, p.true = as.double(S),
-                ncohort=10, cohortsize=3, startdose=1, ntrial=10000)
+                ncohort=10, cohortsize=3, startdose=1, ntrial=ntrial)
   PCS_lBOIN[i] = result_lBOIN$selpercent[idx]
   AvgMTD_lBOIN[i] = result_lBOIN$npatients[idx]
   od60_lBOIN[i] = result_lBOIN$overdose60
   od80_lBOIN[i] = result_lBOIN$overdose80
   ### 3+3
   sims <- get_three_plus_three(num_doses = 5, allow_deescalate = FALSE) %>%
-  simulate_trials(num_sims = 10000, true_prob_tox = as.double(S))
+  simulate_trials(num_sims = ntrial, true_prob_tox = as.double(S))
   PCS_3p3[i] = prob_recommend(sims)[idx+1]
   vec = n_at_dose(sims)[idx]
   AvgMTD_3p3[i] = mean(vec[[1]])
@@ -252,13 +253,15 @@ plot(x = (1:16), y = PCS_lBOIN, type="o", pch="o", lty=1, col="black",
      xlim = c(1,16), ylim=c(0,100), axes=FALSE,
      xlab="Scenario",
      ylab="Correct Selection (%)",
-     main="Target DLT rate = 15%")
+     main="Target DLT rate = 30%")
 
 axis(side = 1, at = seq(1, 16, by=1), las=2)
 axis(side = 2, at = seq(0, 100, by=10))
 lines(x = (1:16), PCS_3p3*100, pch=18, col="blue", type="b", lty=2)
-legend(x = "topleft", legend=c("Local BOIN", "3+3"),
-       col=c("black", "blue"), lty=1:2, lwd=2)
+legend(x = "topleft", legend=c("Local BOIN", "3+3"), 
+       col=c("black", "blue"), lty=1:2, lwd=2, cex=0.75)
+#legend(x = 1, y=100, legend=c("Local BOIN", "3+3"),
+#       col=c("black", "blue"), lty=1:2, lwd=2, cex=0.75)
 ```
 
 ### ii. Avg # of patients at MTD             
@@ -268,11 +271,11 @@ plot(x = (1:16), y = AvgMTD_lBOIN, type="o", pch="o", lty=1, col="black",
      xlim = c(1,16), ylim=c(0,20), axes=FALSE,
      xlab="Scenario",
      ylab="Average no. of patients at MTD",
-     main="Target DLT rate = 15%")
+     main="Target DLT rate = 30%")
 
 axis(side = 1, at = seq(1, 16, by=1), las=2)
 axis(side = 2, at = seq(0, 20, by=5))
-lines(x = (1:16), AvgMTD_3p3*100, pch=18, col="blue", type="b", lty=2)
-legend(x = "topleft", legend=c("Local BOIN", "3+3"),
-       col=c("black", "blue"), lty=1:2, lwd=2)
+lines(x = (1:16), AvgMTD_3p3, pch=18, col="blue", type="b", lty=2)
+legend(x = "topright", legend=c("Local BOIN", "3+3"),
+       col=c("black", "blue"), lty=1:2, lwd=2, cex=0.75)
 ```
