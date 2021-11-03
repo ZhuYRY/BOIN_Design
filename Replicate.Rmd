@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = FALSE)
 # make sure all the data diles and Rmd files are in the same folder
 path = getwd()
 setwd(path)
-set.seed(2021)
+#set.seed(2021)
 for (package in c('readxl', 'BOIN', 'escalation')) {
     if (!require(package, character.only=T, quietly=T)) {
         install.packages(package)
@@ -53,9 +53,10 @@ ud80_3p3 = rep(0,16)
 DLT_true = 0.15
 for (i in 1:nrow(DLT_15)) {
   S = as.list(DLT_15[DLT_15$Scenario==i,][2:6])
+  S = as.double(S)
   idx = which(S == DLT_true)[1]
   ### local BOIN
-  result_lBOIN = get.oc(target = DLT_true, p.true = as.double(S),
+  result_lBOIN = get.oc(target = DLT_true, p.true = S,
                 ncohort=10, cohortsize=3, startdose=1, ntrial=ntrial)
   PCS_lBOIN[i] = result_lBOIN$selpercent[idx]
   AvgMTD_lBOIN[i] = result_lBOIN$npatients[idx]
@@ -63,14 +64,19 @@ for (i in 1:nrow(DLT_15)) {
   od80_lBOIN[i] = result_lBOIN$overdose80
   ### 3+3
   sims <- get_three_plus_three(num_doses = 5, allow_deescalate = FALSE) %>%
-  simulate_trials(num_sims = ntrial, true_prob_tox = as.double(S))
+  simulate_trials(num_sims = ntrial, true_prob_tox = S)
   PCS_3p3[i] = prob_recommend(sims)[idx+1]
-  vec = n_at_dose(sims)[idx]
-  AvgMTD_3p3[i] = mean(vec[[1]])
+  vec = n_at_dose(sims)[1:idx]
+  vec_sum = sum(n_at_dose(sims)[1:idx])
+
+  AvgMTD_3p3[i] = (30*ntrial-vec_sum)/ntrial
   #od60_3p3[i] = result$overdose60
   #od80_3p3[i] = result$overdose80
 }
 ```
+
+
+
 
 ### i. PCS         
 
@@ -109,9 +115,10 @@ legend(x = "topright", legend=c("Local BOIN", "3+3"),
 DLT_true = 0.2
 for (i in 1:nrow(DLT_20)) {
   S = as.list(DLT_20[DLT_20$Scenario==i,][2:6])
+  S = as.double(S)
   idx = which(S == DLT_true)[1]
   ### local BOIN
-  result_lBOIN = get.oc(target = DLT_true, p.true = as.double(S),
+  result_lBOIN = get.oc(target = DLT_true, p.true = S,
                 ncohort=10, cohortsize=3, startdose=1, ntrial=ntrial)
   PCS_lBOIN[i] = result_lBOIN$selpercent[idx]
   AvgMTD_lBOIN[i] = result_lBOIN$npatients[idx]
@@ -119,10 +126,12 @@ for (i in 1:nrow(DLT_20)) {
   od80_lBOIN[i] = result_lBOIN$overdose80
   ### 3+3
   sims <- get_three_plus_three(num_doses = 5, allow_deescalate = FALSE) %>%
-  simulate_trials(num_sims = ntrial, true_prob_tox = as.double(S))
+  simulate_trials(num_sims = ntrial, true_prob_tox = S)
   PCS_3p3[i] = prob_recommend(sims)[idx+1]
-  vec = n_at_dose(sims)[idx]
-  AvgMTD_3p3[i] = mean(vec[[1]])
+  vec = n_at_dose(sims)[1:idx]
+  vec_sum = sum(n_at_dose(sims)[1:idx])
+
+  AvgMTD_3p3[i] = (30*ntrial-vec_sum)/ntrial
   #od60_3p3[i] = result$overdose60
   #od80_3p3[i] = result$overdose80
 }
@@ -167,9 +176,10 @@ legend(x = "topright", legend=c("Local BOIN", "3+3"),
 DLT_true = 0.25
 for (i in 1:nrow(DLT_25)) {
   S = as.list(DLT_25[DLT_25$Scenario==i,][2:6])
+  S = as.double(S)
   idx = which(S == DLT_true)[1]
   ### local BOIN
-  result_lBOIN = get.oc(target = DLT_true, p.true = as.double(S),
+  result_lBOIN = get.oc(target = DLT_true, p.true = S,
                 ncohort=10, cohortsize=3, startdose=1, ntrial=ntrial)
   PCS_lBOIN[i] = result_lBOIN$selpercent[idx]
   AvgMTD_lBOIN[i] = result_lBOIN$npatients[idx]
@@ -177,10 +187,12 @@ for (i in 1:nrow(DLT_25)) {
   od80_lBOIN[i] = result_lBOIN$overdose80
   ### 3+3
   sims <- get_three_plus_three(num_doses = 5, allow_deescalate = FALSE) %>%
-  simulate_trials(num_sims = ntrial, true_prob_tox = as.double(S))
+  simulate_trials(num_sims = ntrial, true_prob_tox = S)
   PCS_3p3[i] = prob_recommend(sims)[idx+1]
-  vec = n_at_dose(sims)[idx]
-  AvgMTD_3p3[i] = mean(vec[[1]])
+  vec = n_at_dose(sims)[1:idx]
+  vec_sum = sum(n_at_dose(sims)[1:idx])
+
+  AvgMTD_3p3[i] = (30*ntrial-vec_sum)/ntrial
   #od60_3p3[i] = result$overdose60
   #od80_3p3[i] = result$overdose80
 }
@@ -226,9 +238,10 @@ legend(x = "topright", legend=c("Local BOIN", "3+3"),
 DLT_true = 0.3
 for (i in 1:nrow(DLT_30)) {
   S = as.list(DLT_30[DLT_30$Scenario==i,][2:6])
+  S = as.double(S)
   idx = which(S == DLT_true)[1]
   ### local BOIN
-  result_lBOIN = get.oc(target = DLT_true, p.true = as.double(S),
+  result_lBOIN = get.oc(target = DLT_true, p.true = S,
                 ncohort=10, cohortsize=3, startdose=1, ntrial=ntrial)
   PCS_lBOIN[i] = result_lBOIN$selpercent[idx]
   AvgMTD_lBOIN[i] = result_lBOIN$npatients[idx]
@@ -236,10 +249,12 @@ for (i in 1:nrow(DLT_30)) {
   od80_lBOIN[i] = result_lBOIN$overdose80
   ### 3+3
   sims <- get_three_plus_three(num_doses = 5, allow_deescalate = FALSE) %>%
-  simulate_trials(num_sims = ntrial, true_prob_tox = as.double(S))
+  simulate_trials(num_sims = ntrial, true_prob_tox = S)
   PCS_3p3[i] = prob_recommend(sims)[idx+1]
-  vec = n_at_dose(sims)[idx]
-  AvgMTD_3p3[i] = mean(vec[[1]])
+  vec = n_at_dose(sims)[1:idx]
+  vec_sum = sum(n_at_dose(sims)[1:idx])
+
+  AvgMTD_3p3[i] = (30*ntrial-vec_sum)/ntrial
   #od60_3p3[i] = result$overdose60
   #od80_3p3[i] = result$overdose80
 }
@@ -279,3 +294,44 @@ lines(x = (1:16), AvgMTD_3p3, pch=18, col="blue", type="b", lty=2)
 legend(x = "topright", legend=c("Local BOIN", "3+3"),
        col=c("black", "blue"), lty=1:2, lwd=2, cex=0.75)
 ```
+
+
+
+```{r}
+library(tibble)
+library(dplyr)
+DLT_true = 0.2
+ntrial = 100
+i = 7
+
+  S = as.list(DLT_20[DLT_20$Scenario==i,][2:6])
+  S = as.double(S)
+  idx = which(S == DLT_true)[1]
+  sims <- get_three_plus_three(num_doses = 5, allow_deescalate = FALSE) %>%
+  simulate_trials(num_sims = ntrial, true_prob_tox = S)
+  
+  # vec = n_at_dose(sims)[1:idx]
+  # vec_sum = sum(n_at_dose(sims)[1:idx])
+  # 
+  # AvgMTD_3p3 = (30*ntrial-vec_sum)/ntrial
+  tab = as_tibble(sims)
+  tab = as.data.frame(tab)
+  avg = rep(0, ntrial)
+  for (i in 1:ntrial) {
+    num = 0
+    tab_i = tab %>% filter(tab$.iteration == i)
+    j = 1
+    while (tab_i[j,]$recommended == FALSE) {
+      num = num + tab_i[j,]$n
+      j = j + 1
+    }
+    avg[i] = 30-num
+  }
+  avg
+  mean(avg)
+  # tab[".iteration"]
+```
+
+
+
+

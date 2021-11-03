@@ -40,10 +40,19 @@ Boundaries
 ## Data generation           
 how are the trial data (not the dose scenario) in each simulation generated?     
 
+BOIN_SuyuLiu&YingYuan.pdf      
+Fig.3 replicate in Simulation.Rmd
 
 ## Package
 
-### BOIN
+### BOIN              
+BOIN2.4_manual.pdf        
+BOIN2.4_tutorial.pdf
+
+### Escalation        
+Info Website:            
+https://cran.r-project.org/web/packages/escalation/vignettes/A700-Simulation.html
+
 
 ### STAN
 
