@@ -29,7 +29,7 @@ DLT_30 = as.data.frame.list(read_excel("ToxicityScenarios_DLTrates.xlsx", sheet 
 
 
 ```{r}
-ntrial = 100
+ntrial = 1000
 # i. PCS
 PCS_lBOIN = rep(0,16)
 PCS_3p3 = rep(0,16)
@@ -297,7 +297,7 @@ legend(x = "topright", legend=c("Local BOIN", "3+3"),
 
 
 
-```{r}
+```{r, echo=TRUE}
 library(tibble)
 library(dplyr)
 DLT_true = 0.2
