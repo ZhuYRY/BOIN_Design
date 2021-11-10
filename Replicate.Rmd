@@ -31,7 +31,8 @@ DLT_30 = as.data.frame.list(read_excel("ToxicityScenarios_DLTrates.xlsx", sheet 
 ## Set-up    
 
 ```{r}
-ntrial = 1000
+nsim = 1000  # number of simulation/repetition
+nobs = 30    # sample size: total available patients
 # i. PCS
 PCS_lBOIN = rep(0,16)
 PCS_3p3 = rep(0,16)
@@ -59,19 +60,19 @@ for (i in 1:nrow(DLT_15)) {
   idx = which(S == DLT_true)[1]
   ### local BOIN
   result_lBOIN = get.oc(target = DLT_true, p.true = S,
-                ncohort=10, cohortsize=3, startdose=1, ntrial=ntrial)
+                ncohort=10, cohortsize=3, startdose=1, ntrial=nsim)
   PCS_lBOIN[i] = result_lBOIN$selpercent[idx]
   AvgMTD_lBOIN[i] = result_lBOIN$npatients[idx]
   od60_lBOIN[i] = result_lBOIN$overdose60
   od80_lBOIN[i] = result_lBOIN$overdose80
   ### 3+3
   sims <- get_three_plus_three(num_doses = 5, allow_deescalate = FALSE) %>%
-  simulate_trials(num_sims = ntrial, true_prob_tox = S)
+  simulate_trials(num_sims = nsim, true_prob_tox = S)
   PCS_3p3[i] = prob_recommend(sims)[idx+1]
   vec = n_at_dose(sims)[1:idx]
   vec_sum = sum(n_at_dose(sims)[1:idx])
 
-  AvgMTD_3p3[i] = (30*ntrial-vec_sum)/ntrial
+  AvgMTD_3p3[i] = (30*nsim-vec_sum)/nsim
   #od60_3p3[i] = result$overdose60
   #od80_3p3[i] = result$overdose80
 }
@@ -115,56 +116,68 @@ legend(x = "topright", legend=c("Local BOIN", "3+3"),
 ## DLT = 20%
 ```{r}
 DLT_true = 0.2
-#i = 5
+
 for (i in 1:nrow(DLT_20)) {
+  # S = probability vector in a scenario
   S = as.list(DLT_20[DLT_20$Scenario==i,][2:6])
   S = as.double(S)
+  # idx = which one is the targeted DLT rate
   idx = which(S == DLT_true)[1]
   ### local BOIN
   result_lBOIN = get.oc(target = DLT_true, p.true = S,
-                ncohort=10, cohortsize=3, startdose=1, ntrial=ntrial)
-  PCS_lBOIN[i] = result_lBOIN$selpercent[idx]
-  AvgMTD_lBOIN[i] = result_lBOIN$npatients[idx]
-  od60_lBOIN[i] = result_lBOIN$overdose60
-  od80_lBOIN[i] = result_lBOIN$overdose80
+                ncohort=10, cohortsize=3, startdose=1, ntrial=nsim)
+  PCS_lBOIN[i] = result_lBOIN$selpercent[idx]    # i.Correct selection rate
+  AvgMTD_lBOIN[i] = result_lBOIN$npatients[idx]  # ii.Avg # at MTD
+  od60_lBOIN[i] = result_lBOIN$overdose60        # iii.>60% OD
+  od80_lBOIN[i] = result_lBOIN$overdose80        # iv.>80% OD
   ### 3+3
   sims <- get_three_plus_three(num_doses = 5, allow_deescalate = FALSE) %>%
-  simulate_trials(num_sims = ntrial, true_prob_tox = S)
+  simulate_trials(num_sims = nsim, true_prob_tox = S)
   PCS_3p3[i] = prob_recommend(sims)[idx+1]
   
   tab = as_tibble(sims)
   tab = as.data.frame(tab)
-  tot_at_MTD = rep(0, ntrial)
+  tot_at_MTD = rep(0, nsim)
   od_60 = 0
   od_80 = 0
-  for (m in 1:ntrial) {
+  for (m in 1:nsim) {
     tab_n = tab %>% filter(tab$.iteration == m)
     #n_at_MTD = tab_n %>% filter(tab_n$dose == idx) %>% select(n)
     #tot_at_MTD[m] = n_at_MTD$n
     # n_at_MTD = tab_n %>% filter(tab_n$recommended==TRUE) %>% select(n)
     # n_at_MTD = tab_n %>% filter(tab_n$dose == idx) %>% select(n)
     # tot_at_MTD[m] = 30 - sum(tab_n$n) + n_at_MTD$n
+    
+    # # of patients at selected MTD
     n_at_sMTD = tab_n %>% filter(tab_n$recommended==TRUE) %>% select(n)
-    n_at_MTD = tab_n %>% filter(tab_n$dose == idx) %>% select(n)
-    tot_at_MTD[m] = n_at_MTD$n
     treat_at_sMTD = 30 - sum(tab_n$n) + n_at_sMTD$n
-    tab_od = tab_n %>% 
+    
+    # Reassign # patients at each dose level: 
+    # remaining patients go to selected MTD
+    tab_adj = tab_n %>% 
       select(dose, n, recommended) %>% 
       mutate(new_n = ifelse(recommended==TRUE, treat_at_sMTD, 
-                            ifelse(recommended==FALSE, n, NA))) %>%
-      filter(dose > idx) %>%
-      select(new_n)
+                            ifelse(recommended==FALSE, n, NA)))
+ 
+    # # of patients at true MTD
+    n_at_MTD = tab_adj %>% filter(tab_adj$dose == idx) %>% select(new_n)
+    tot_at_MTD[m] = n_at_MTD$new_n
+
+    # # of OD
+    tab_od = tab_adj %>% filter(dose > idx) %>% select(new_n)
     n_od = ifelse(nrow(tab_od) > 0, sum(tab_od), 
                   ifelse(nrow(tab_od) == 0, 0, NA))
+    # OD 60%
     if (n_od >= 30*0.6) {
       od_60 = od_60 + 1
+    # OD 80%
     } else if (n_od >= 30*0.8) {
       od_80 = od_80 + 1
     }
   }
   AvgMTD_3p3[i] = mean(tot_at_MTD)
-  od60_3p3[i] = od_60/ntrial
-  od80_3p3[i] = od_80/ntrial
+  od60_3p3[i] = od_60/nsim
+  od80_3p3[i] = od_80/nsim
 }
 
 ```
@@ -181,14 +194,14 @@ S = as.list(DLT_20[DLT_20$Scenario==i,][2:6])
 S = as.double(S) # S = 0.08 0.15 0.20 0.25 0.35
 idx = which(S == DLT_true)[1] # idx = 3
 sims <- get_three_plus_three(num_doses = 5, allow_deescalate = FALSE) %>%
-  simulate_trials(num_sims = ntrial, true_prob_tox = S)
+  simulate_trials(num_sims = nsim, true_prob_tox = S)
 tab = as_tibble(sims)
 tab = as.data.frame(tab)
 #tab
-tot_at_MTD = rep(0, ntrial)
+tot_at_MTD = rep(0, nsim)
 od_60 = 0
 od_80 = 0
-for (m in 1:ntrial) {
+for (m in 1:nsim) {
   num = 0
   tab_n = tab %>% filter(tab$.iteration == m)
   n_at_sMTD = tab_n %>% filter(tab_n$recommended==TRUE) %>% select(n)
@@ -300,19 +313,19 @@ for (i in 1:nrow(DLT_25)) {
   idx = which(S == DLT_true)[1]
   ### local BOIN
   result_lBOIN = get.oc(target = DLT_true, p.true = S,
-                ncohort=10, cohortsize=3, startdose=1, ntrial=ntrial)
+                ncohort=10, cohortsize=3, startdose=1, ntrial=nsim)
   PCS_lBOIN[i] = result_lBOIN$selpercent[idx]
   AvgMTD_lBOIN[i] = result_lBOIN$npatients[idx]
   od60_lBOIN[i] = result_lBOIN$overdose60
   od80_lBOIN[i] = result_lBOIN$overdose80
   ### 3+3
   sims <- get_three_plus_three(num_doses = 5, allow_deescalate = FALSE) %>%
-  simulate_trials(num_sims = ntrial, true_prob_tox = S)
+  simulate_trials(num_sims = nsim, true_prob_tox = S)
   PCS_3p3[i] = prob_recommend(sims)[idx+1]
   vec = n_at_dose(sims)[1:idx]
   vec_sum = sum(n_at_dose(sims)[1:idx])
 
-  AvgMTD_3p3[i] = (30*ntrial-vec_sum)/ntrial
+  AvgMTD_3p3[i] = (30*nsim-vec_sum)/nsim
   #od60_3p3[i] = result$overdose60
   #od80_3p3[i] = result$overdose80
 }
@@ -362,19 +375,19 @@ for (i in 1:nrow(DLT_30)) {
   idx = which(S == DLT_true)[1]
   ### local BOIN
   result_lBOIN = get.oc(target = DLT_true, p.true = S,
-                ncohort=10, cohortsize=3, startdose=1, ntrial=ntrial)
+                ncohort=10, cohortsize=3, startdose=1, ntrial=nsim)
   PCS_lBOIN[i] = result_lBOIN$selpercent[idx]
   AvgMTD_lBOIN[i] = result_lBOIN$npatients[idx]
   od60_lBOIN[i] = result_lBOIN$overdose60
   od80_lBOIN[i] = result_lBOIN$overdose80
   ### 3+3
   sims <- get_three_plus_three(num_doses = 5, allow_deescalate = FALSE) %>%
-  simulate_trials(num_sims = ntrial, true_prob_tox = S)
+  simulate_trials(num_sims = nsim, true_prob_tox = S)
   PCS_3p3[i] = prob_recommend(sims)[idx+1]
   vec = n_at_dose(sims)[1:idx]
   vec_sum = sum(n_at_dose(sims)[1:idx])
 
-  AvgMTD_3p3[i] = (30*ntrial-vec_sum)/ntrial
+  AvgMTD_3p3[i] = (30*nsim-vec_sum)/nsim
   #od60_3p3[i] = result$overdose60
   #od80_3p3[i] = result$overdose80
 }
@@ -421,23 +434,23 @@ legend(x = "topright", legend=c("Local BOIN", "3+3"),
 library(tibble)
 library(dplyr)
 DLT_true = 0.2
-ntrial = 100
+nsim = 100
 i = 7
 
   S = as.list(DLT_20[DLT_20$Scenario==i,][2:6])
   S = as.double(S)
   idx = which(S == DLT_true)[1]
   sims <- get_three_plus_three(num_doses = 5, allow_deescalate = FALSE) %>%
-  simulate_trials(num_sims = ntrial, true_prob_tox = S)
+  simulate_trials(num_sims = nsim, true_prob_tox = S)
   
   # vec = n_at_dose(sims)[1:idx]
   # vec_sum = sum(n_at_dose(sims)[1:idx])
   # 
-  # AvgMTD_3p3 = (30*ntrial-vec_sum)/ntrial
+  # AvgMTD_3p3 = (30*nsim-vec_sum)/nsim
   tab = as_tibble(sims)
   tab = as.data.frame(tab)
-  avg = rep(0, ntrial)
-  for (i in 1:ntrial) {
+  avg = rep(0, nsim)
+  for (i in 1:nsim) {
     num = 0
     tab_i = tab %>% filter(tab$.iteration == i)
     tab[tab$recommended == TRUE]
