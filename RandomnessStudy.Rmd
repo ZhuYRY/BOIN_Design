@@ -1,0 +1,52 @@
+---
+title: "Randomness Study"
+author: "Yanruyu Zhu (yaz4004)"
+date: "11/16/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+ 
+```{r}
+library(escalation)
+library(BOIN)
+```
+
+```{r}
+View(get_three_plus_three)
+#View(simulate_trials)
+```
+function (selector_factory, num_sims, true_prob_tox, true_prob_eff = NULL, 
+  ...) 
+{
+  sim_func <- simulation_function(selector_factory)
+  if (is.null(true_prob_eff)) {
+    l <- lapply(1:num_sims, function(x) sim_func(selector_factory, 
+      true_prob_tox, ...))
+  }
+  else {
+    l <- lapply(1:num_sims, function(x) sim_func(selector_factory, 
+      true_prob_tox, true_prob_eff = true_prob_eff, ...))
+  }
+  simulations(fits = l, true_prob_tox = true_prob_tox, true_prob_eff = true_prob_eff, 
+    ...)
+    
+```{r}
+View(simulation_function)
+```
+function (selector_factory) 
+{
+  UseMethod("simulation_function")
+}
+
+```{r}
+methods(simulation_function)
+#getAnywhere(simulation_function.derived_dose_selector_factory)
+```
+```{r}
+View(get.oc)
+```
+
+

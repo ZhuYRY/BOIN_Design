@@ -9,12 +9,34 @@ output: pdf_document
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
+#### Step 1:        
+a. Define file path;          
+b. Set seed, Install packages;    
+c. Read in data files;         
+#### Step 2:         
+a. Initialize parameter space;      
+#### Step 3:
+For each scenario:      
+  a. Run BOIN 10,000 times;       
+  b. Record the performance metrics;        
+  c. Run 3+3 10,000 times;        
+  d. Adjust # of patients @ MTD;         
+  d. Record the performance metrics;        
+#### Step 4:      
+Plot comparison between BOIN and 3+3.       
+
 ```{r}
+###########################
+###### Step 1. a   ########
+###########################
 # make sure all the data diles and Rmd files are in the same folder
 path = getwd()
 setwd(path)
 
-#set.seed(2021)
+###########################
+###### Step 1. b   ########
+###########################
+set.seed(2021)
 for (package in c('readxl', 'BOIN', 'escalation', 'tibble', 'dplyr')) {
     if (!require(package, character.only=T, quietly=T)) {
         install.packages(package)
@@ -22,6 +44,9 @@ for (package in c('readxl', 'BOIN', 'escalation', 'tibble', 'dplyr')) {
     }
 }
 
+###########################
+###### Step 1. c   ########
+###########################
 DLT_15 = as.data.frame.list(read_excel("ToxicityScenarios_DLTrates.xlsx", sheet = "DLT=0.15"))
 DLT_20 = as.data.frame.list(read_excel("ToxicityScenarios_DLTrates.xlsx", sheet = "DLT=0.2"))
 DLT_25 = as.data.frame.list(read_excel("ToxicityScenarios_DLTrates.xlsx", sheet = "DLT=0.25"))
@@ -31,6 +56,9 @@ DLT_30 = as.data.frame.list(read_excel("ToxicityScenarios_DLTrates.xlsx", sheet 
 ## Set-up    
 
 ```{r}
+###########################
+###### Step 2. a   ########
+###########################
 nsim = 1000  # number of simulation/repetition
 nobs = 30    # sample size: total available patients
 # i. PCS
@@ -115,21 +143,37 @@ legend(x = "topright", legend=c("Local BOIN", "3+3"),
 
 ## DLT = 20%
 ```{r}
+###########################
+###### Step 3.     ########
+###########################
 DLT_true = 0.2
 
+###########################
+#### For each scenario ####
+###########################  
 for (i in 1:nrow(DLT_20)) {
   # S = probability vector in a scenario
   S = as.list(DLT_20[DLT_20$Scenario==i,][2:6])
   S = as.double(S)
   # idx = which one is the targeted DLT rate
   idx = which(S == DLT_true)[1]
+  ###########################
+  ###### Step 3. a   ########
+  ###########################
   ### local BOIN
   result_lBOIN = get.oc(target = DLT_true, p.true = S,
-                ncohort=10, cohortsize=3, startdose=1, ntrial=nsim)
+                ncohort=10, cohortsize=3, startdose=1, 
+                ntrial=nsim)
+  ###########################
+  ###### Step 3. b   ########
+  ###########################
   PCS_lBOIN[i] = result_lBOIN$selpercent[idx]    # i.Correct selection rate
   AvgMTD_lBOIN[i] = result_lBOIN$npatients[idx]  # ii.Avg # at MTD
   od60_lBOIN[i] = result_lBOIN$overdose60        # iii.>60% OD
   od80_lBOIN[i] = result_lBOIN$overdose80        # iv.>80% OD
+  ###########################
+  ###### Step 3. c   ########
+  ###########################
   ### 3+3
   sims <- get_three_plus_three(num_doses = 5, allow_deescalate = FALSE) %>%
   simulate_trials(num_sims = nsim, true_prob_tox = S)
@@ -142,12 +186,9 @@ for (i in 1:nrow(DLT_20)) {
   od_80 = 0
   for (m in 1:nsim) {
     tab_n = tab %>% filter(tab$.iteration == m)
-    #n_at_MTD = tab_n %>% filter(tab_n$dose == idx) %>% select(n)
-    #tot_at_MTD[m] = n_at_MTD$n
-    # n_at_MTD = tab_n %>% filter(tab_n$recommended==TRUE) %>% select(n)
-    # n_at_MTD = tab_n %>% filter(tab_n$dose == idx) %>% select(n)
-    # tot_at_MTD[m] = 30 - sum(tab_n$n) + n_at_MTD$n
-    
+    ###########################
+    ###### Step 3. d   ########
+    ###########################
     # # of patients at selected MTD
     n_at_sMTD = tab_n %>% filter(tab_n$recommended==TRUE) %>% select(n)
     treat_at_sMTD = 30 - sum(tab_n$n) + n_at_sMTD$n
@@ -159,6 +200,9 @@ for (i in 1:nrow(DLT_20)) {
       mutate(new_n = ifelse(recommended==TRUE, treat_at_sMTD, 
                             ifelse(recommended==FALSE, n, NA)))
  
+    ###########################
+    ###### Step 3. e   ########
+    ###########################
     # # of patients at true MTD
     n_at_MTD = tab_adj %>% filter(tab_adj$dose == idx) %>% select(new_n)
     tot_at_MTD[m] = n_at_MTD$new_n
